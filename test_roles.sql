@@ -1,7 +1,7 @@
 \qecho '---------- Schema setup ------------'
 
 create schema if not exists test_roles;
-set schema test_roles;
+set search_path to test_roles;
 
 -- table
 create table if not exists messages (
