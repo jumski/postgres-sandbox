@@ -1,0 +1,6 @@
+#!/bin/bash
+if [ -t 0 ]; then
+  docker-compose exec postgres psql "$@" -Upostgres sandbox
+else
+  docker-compose exec -T postgres psql "$@" -Upostgres sandbox < /dev/stdin
+fi
