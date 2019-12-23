@@ -1,19 +1,17 @@
 # Postgres Sandbox
 
-## Setup
-
-### Requirements
+#### Requirements
 
 * docker
 * docker-compose
 
-### Setup
+#### Setup
 
 ```bash
 docker-compose up -d postgres
 ```
 
-### Interactive mode
+#### Interactive mode
 
 Use `bin/psql` to enter interactive mode:
 
