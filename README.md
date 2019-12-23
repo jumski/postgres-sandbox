@@ -44,3 +44,10 @@ bin/psql < example_name.sql
 
 Sandbox for testing how roles and row level locking actually works.
 
+### `test_updatable_views.sql`
+
+Sandbox for testing automatic updatable views.
+
+### `test_update_triggers.sql`
+
+Sandbox for testing triggers.
