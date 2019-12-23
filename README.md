@@ -11,7 +11,7 @@
 docker-compose up -d postgres
 ```
 
-#### Interactive mode
+#### Running `psql`
 
 Use `bin/psql` to enter interactive mode:
 
