@@ -1,8 +1,8 @@
 \qecho '---------- Schema setup ------------'
 
 -- schema boilerplate
-create schema if not exists test_update_triggers;
-set search_path to test_update_triggers;
+create schema if not exists test_update_triggers_on_views;
+set search_path to test_update_triggers_on_views;
 drop view if exists tasks_with_users;
 drop table if exists tasks;
 drop table if exists users;
