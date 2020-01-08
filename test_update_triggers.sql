@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS group_events (
 -- fail on any errors below
 \set ON_ERROR_STOP TRUE
 
+-- function that returns event name for difference between OLD and NEW rows
+-- returns NULL if no event should be created
 CREATE OR replace FUNCTION event_name_for_changes(OLD groups, NEW groups) RETURNS text AS
 $body$
 BEGIN
@@ -31,6 +33,7 @@ BEGIN
 END;
 $body$ LANGUAGE plpgsql;
 
+-- trigger that watches updates to `groups` table and creates new events
 CREATE OR REPLACE FUNCTION create_group_event() RETURNS TRIGGER AS
 $body$
 DECLARE
