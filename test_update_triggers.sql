@@ -49,29 +49,23 @@ $body$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION create_group_event() RETURNS TRIGGER AS
 $body$
 DECLARE
-  status_name text;
   transition_event_name text := transition_event_name_for_changes(OLD, NEW);
   added_statuses text[] := array_subtract(NEW.statuses, OLD.statuses);
   removed_statuses text[] := array_subtract(OLD.statuses, NEW.statuses);
 BEGIN
   -- transition_state changes
-  /* transition_event_name := transition_event_name_for_changes(OLD, NEW); */
   IF transition_event_name IS NOT NULL THEN
     INSERT INTO group_events(event_date, event_name, group_id)
       VALUES(NOW(), transition_event_name, NEW.id);
   END IF;
 
-  -- add statuses
-  FOREACH status_name IN ARRAY added_statuses LOOP
-    INSERT INTO group_events(event_date, event_name, group_id)
-      VALUES(NOW(), 'add_status_' || status_name, NEW.id);
-  END LOOP;
-
-  -- remove statuses
-  FOREACH status_name IN ARRAY removed_statuses LOOP
-    INSERT INTO group_events(event_date, event_name, group_id)
-      VALUES(NOW(), 'remove_status_' || status_name, NEW.id);
-  END LOOP;
+  -- add/remove statuses
+  INSERT INTO group_events(event_date, event_name, group_id)
+    SELECT NOW(), 'add_status_' || status_name, NEW.id
+    FROM UNNEST(added_statuses) AS status_name
+    UNION ALL
+    SELECT NOW(), 'remove_status_' || status_name, NEW.id
+    FROM UNNEST(removed_statuses) AS status_name;
 
   RETURN NEW;
 END;
