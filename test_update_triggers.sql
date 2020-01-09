@@ -28,27 +28,10 @@ BEGIN
 END;
 $body$ LANGUAGE plpgsql;
 
-/* CREATE OR replace FUNCTION removed_statuses(OLD groups, NEW groups) RETURNS text[] AS */
-/* $body$ */
-/* BEGIN */
-/*   RETURN SELECT ARRAY(SELECT UNNEST(OLD.statuses) EXCEPT SELECT UNNEST(NEW.statuses)); */
-/* END; */
-/* $body$ LANGUAGE plpgsql; */
-
-/* CREATE OR replace FUNCTION added_statuses(OLD groups, NEW groups) RETURNS text[] AS */
-/* $body$ */
-/* BEGIN */
-/*   RETURN SELECT ARRAY(SELECT UNNEST(NEW.statuses) EXCEPT SELECT UNNEST(OLD.statuses)); */
-/* END; */
-/* $body$ LANGUAGE plpgsql; */
-
 -- function that returns event name for difference between OLD and NEW rows
 -- returns NULL if no event should be created
-CREATE OR replace FUNCTION event_name_for_changes(OLD groups, NEW groups) RETURNS text AS
+CREATE OR replace FUNCTION transition_event_name_for_changes(OLD groups, NEW groups) RETURNS text AS
 $body$
-DECLARE
-  added_statuses text[];
-  removed_statuses text[];
 BEGIN
   IF OLD.transition_state = 'lead' AND NEW.transition_state = 'prospect' THEN
     RETURN 'convert_to_prospect';
@@ -58,16 +41,7 @@ BEGIN
     RETURN 'convert_to_customer';
   END IF;
 
-  IF OLD.statuses != NEW.statuses THEN
-    added_statuses := array_subtract(NEW.statuses, OLD.statuses);
-    removed_statuses := array_subtract(OLD.statuses, NEW.statuses);
-    RETURN 'statuses_changed';
-  END IF;
-
   RETURN NULL;
-
-  /* IF OLD.transition_state = 'prospect' AND NEW.transition_state = 'prospect' */
-  /*    AND NOT OLD.statuses @> ARRAY['quoted'] AND OLD.statuses @> ARRAY['quoted'] THEN 'convert_to_prospect' *1/ */
 END;
 $body$ LANGUAGE plpgsql;
 
@@ -75,14 +49,29 @@ $body$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION create_group_event() RETURNS TRIGGER AS
 $body$
 DECLARE
-  event_name text;
+  status_name text;
+  transition_event_name text := transition_event_name_for_changes(OLD, NEW);
+  added_statuses text[] := array_subtract(NEW.statuses, OLD.statuses);
+  removed_statuses text[] := array_subtract(OLD.statuses, NEW.statuses);
 BEGIN
-  event_name := event_name_for_changes(OLD, NEW);
-
-  IF event_name IS NOT NULL THEN
+  -- transition_state changes
+  /* transition_event_name := transition_event_name_for_changes(OLD, NEW); */
+  IF transition_event_name IS NOT NULL THEN
     INSERT INTO group_events(event_date, event_name, group_id)
-      VALUES(NOW(), event_name, NEW.id);
+      VALUES(NOW(), transition_event_name, NEW.id);
   END IF;
+
+  -- add statuses
+  FOREACH status_name IN ARRAY added_statuses LOOP
+    INSERT INTO group_events(event_date, event_name, group_id)
+      VALUES(NOW(), 'add_status_' || status_name, NEW.id);
+  END LOOP;
+
+  -- remove statuses
+  FOREACH status_name IN ARRAY removed_statuses LOOP
+    INSERT INTO group_events(event_date, event_name, group_id)
+      VALUES(NOW(), 'remove_status_' || status_name, NEW.id);
+  END LOOP;
 
   RETURN NEW;
 END;
@@ -94,11 +83,16 @@ CREATE TRIGGER create_group_event_trigger
   FOR EACH ROW
   EXECUTE PROCEDURE create_group_event();
 
-INSERT INTO groups(transition_state, premium_value) VALUES ('lead', 100), ('prospect', 200), ('customer', 300);
+INSERT INTO groups(transition_state, premium_value, statuses) VALUES ('lead', 100, ARRAY['new']), ('prospect', 200, ARRAY['hot', 'quoted']), ('customer', 300, ARRAY['cold']);
 SELECT * FROM groups;
 SELECT * FROM group_events;
 
 UPDATE groups SET transition_state = 'prospect' WHERE transition_state = 'lead';
 UPDATE groups SET premium_value = 200 WHERE premium_value = 100;
-UPDATE groups SET statuses = ARRAY['yolo', 'flaki'] WHERE transition_state = 'customer';
+UPDATE groups SET statuses = array_append(statuses, 'quoted') WHERE transition_state = 'customer';
+UPDATE groups SET statuses = array_append(statuses, 'new') WHERE transition_state = 'customer';
+UPDATE groups SET statuses = array_append(statuses, 'hot') WHERE transition_state = 'customer';
+UPDATE groups SET statuses = array_remove(statuses, 'quoted') WHERE transition_state = 'customer';
+UPDATE groups SET statuses = array_remove(statuses, 'new') WHERE transition_state = 'customer';
+UPDATE groups SET statuses = array_append(statuses, 'quoted') WHERE transition_state = 'customer';
 SELECT * FROM group_events;
