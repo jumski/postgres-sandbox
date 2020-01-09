@@ -31,6 +31,15 @@ It also passes any arguments to `psql`:
 bin/psql --quiet
 ```
 
+### Useful psql flags
+
+`--echo-all` - print every statement to stdout before running it
+
+### Useful debug tips
+
+* To output something from the function/trigger: `RAISE NOTICE 'Text %', value;`
+
+
 ## Running examples
 
 Every example should create and use schema of its own filename (without extension)
