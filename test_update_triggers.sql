@@ -35,9 +35,18 @@ $body$
 DECLARE
   added_statuses text[] := array_subtract(NEW.statuses, OLD.statuses);
   removed_statuses text[] := array_subtract(OLD.statuses, NEW.statuses);
+  transition_state_changed BOOLEAN := OLD.transition_state != NEW.transition_state;
+  is_prospect BOOLEAN := NEW.transition_state = 'prospect';
 BEGIN
+  -- special case - adding 'quoted' status to prospect,
+  -- creates `convert_to_quoted_prospect` transition
+  IF (NOT transition_state_changed) AND is_prospect AND added_statuses @> ARRAY['quoted'] THEN
+    INSERT INTO group_events(event_date, event_name, group_id)
+      VALUES(NOW(), 'convert_to_quoted_prospect', NEW.id);
+  END IF;
+
   -- transition_state changes
-  IF OLD.transition_state != NEW.transition_state THEN
+  IF transition_state_changed THEN
     INSERT INTO group_events(event_date, event_name, group_id)
       VALUES(NOW(), 'convert_to_' || NEW.transition_state, NEW.id);
   END IF;
@@ -60,10 +69,11 @@ CREATE TRIGGER create_group_event_trigger
   FOR EACH ROW
   EXECUTE PROCEDURE create_group_event();
 
-INSERT INTO groups(transition_state, premium_value, statuses) VALUES ('lead', 100, ARRAY['new']), ('prospect', 200, ARRAY['hot', 'quoted']), ('customer', 300, ARRAY['cold']);
+INSERT INTO groups(transition_state, premium_value, statuses) VALUES ('lead', 100, ARRAY['new']), ('prospect', 200, ARRAY['hot']), ('customer', 300, ARRAY['cold']);
 SELECT * FROM groups;
 SELECT * FROM group_events;
 
+UPDATE groups SET statuses = array_append(statuses, 'quoted') WHERE transition_state = 'prospect';
 UPDATE groups SET transition_state = 'customer' WHERE transition_state = 'prospect';
 UPDATE groups SET transition_state = 'prospect' WHERE transition_state = 'lead';
 UPDATE groups SET premium_value = 200 WHERE premium_value = 100;
