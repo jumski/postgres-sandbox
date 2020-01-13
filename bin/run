@@ -1,0 +1,21 @@
+#!/bin/bash
+
+source bin/functions.sh
+
+script_file=$1
+if [ ! -f "$script_file" ]; then
+  log Provide path to sql file
+  exit 1
+fi
+
+if [ $(basename $1) = "setup.sql" ]; then
+  log Please run non-setup file
+  exit 1
+fi
+
+sandbox_name=$(dirname $script_file)
+schema_name="sandbox_${sandbox_name}"
+
+execute_file_in_schema $schema_name $script_file
+
+

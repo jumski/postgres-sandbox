@@ -1,0 +1,23 @@
+#!/bin/bash
+
+source bin/functions.sh
+
+sandbox_path=$1
+if [ ! -d "$sandbox_path" ]; then
+  log Provide path to sql file
+  exit 1
+fi
+
+sandbox_name=$(basename $sandbox_path)
+sql_setup_file=${sandbox_name}/setup.sql
+schema_name="sandbox_${sandbox_name}"
+
+docker_up
+execute DROP SCHEMA IF EXISTS $schema_name CASCADE
+execute CREATE SCHEMA $schema_name
+
+if [ -f $sql_setup_file ]; then
+  execute_file_in_schema $schema_name $sql_setup_file
+fi
+
+log Done
