@@ -7,9 +7,8 @@ if [ ! -d "$sandbox_path" ]; then
   log Provide path to sql file
   exit 1
 fi
-
 sandbox_name=$(basename $sandbox_path)
-sql_setup_file=${sandbox_name}/setup.sql
+sql_setup_file=${sandbox_name}/_setup.sql
 schema_name="sandbox_${sandbox_name}"
 
 docker_up

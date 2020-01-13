@@ -8,7 +8,7 @@ if [ ! -f "$script_file" ]; then
   exit 1
 fi
 
-if [ $(basename $1) = "setup.sql" ]; then
+if [ $(basename $1) = "_setup.sql" ]; then
   log Please run non-setup file
   exit 1
 fi
