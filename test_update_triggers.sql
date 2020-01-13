@@ -40,7 +40,7 @@ DECLARE
 BEGIN
   -- special case - adding 'quoted' status to prospect,
   -- creates `convert_to_quoted_prospect` transition
-  IF (NOT transition_state_changed) AND is_prospect AND added_statuses @> ARRAY['quoted'] THEN
+  IF is_prospect AND added_statuses @> ARRAY['quoted'] THEN
     INSERT INTO group_events(event_date, event_name, group_id)
       VALUES(NOW(), 'convert_to_quoted_prospect', NEW.id);
   END IF;
