@@ -36,7 +36,7 @@ END;
 $body$ LANGUAGE plpgsql;
 
 -- trigger that watches updates to `groups` table and creates new events
-CREATE OR REPLACE FUNCTION create_group_event_on_update() RETURNS TRIGGER AS
+CREATE OR REPLACE FUNCTION create_group_changes_on_update() RETURNS TRIGGER AS
 $body$
 DECLARE
   added_statuses text[] := array_subtract(NEW.statuses, OLD.statuses);
@@ -76,7 +76,7 @@ END;
 $body$ language plpgsql;
 
 -- trigger that watches inserts to `groups` table and creates new events
-CREATE OR REPLACE FUNCTION create_group_event_on_insert() RETURNS TRIGGER AS
+CREATE OR REPLACE FUNCTION create_group_changes_on_insert() RETURNS TRIGGER AS
 $body$
 DECLARE
   event_name text;
@@ -94,17 +94,17 @@ BEGIN
 END;
 $body$ LANGUAGE plpgsql;
 
-CREATE TRIGGER create_group_event_on_update_trigger
+CREATE TRIGGER create_group_changes_on_update
   AFTER UPDATE
   ON groups
   FOR EACH ROW
-  EXECUTE PROCEDURE create_group_event_on_update();
+  EXECUTE PROCEDURE create_group_changes_on_update();
 
-CREATE TRIGGER create_group_event_on_insert_trigger
+CREATE TRIGGER create_group_changes_on_insert
   AFTER INSERT
   ON groups
   FOR EACH ROW
-  EXECUTE PROCEDURE create_group_event_on_insert();
+  EXECUTE PROCEDURE create_group_changes_on_insert();
 
 INSERT INTO groups(id, transition_state, premium_value, statuses, organization_id, user_id, lead_email_import_id, lead_api_import_id) VALUES
   -- regular lead (not null user_id, null lead_email_import_id and lead_api_import_id)
