@@ -7,6 +7,7 @@ services:
       POSTGRES_USER: 'postgres'
       POSTGRES_PASSWORD: ''
       POSTGRES_DB: 'sandbox'
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - '5433:5432'
     volumes:
