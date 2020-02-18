@@ -78,3 +78,8 @@ LEFT JOIN LATERAL (
 ) AS last_quoted ON TRUE
 
 ; -- SELECT
+
+
+-- TODO:
+-- * add Partial index to events.type column
+-- * Read https://dba.stackexchange.com/questions/143044/optimise-a-LATERAL-JOIN-query-ON-a-big-table
