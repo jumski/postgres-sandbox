@@ -40,14 +40,16 @@ SELECT
   calls.created_at        AS call_date,
   calls.callee            AS callee,
 
-  -- last_state.created_at   AS last_state_date,
-  last_state.type         AS last_state_type,
-
-  -- last_hot.created_at     AS last_hot_date,
-  last_hot.type           AS last_hot_type,
-
-  -- last_quoted.created_at  AS last_quoted_date,
-  last_quoted.type        AS last_quoted_type
+  CASE WHEN last_state.type = 'created' THEN 'created'
+       WHEN last_state.type = 'convert_to_prospect' THEN 'prospect'
+       WHEN last_state.type = 'convert_to_customer' THEN 'customer'
+  END AS state,
+  CASE WHEN last_hot.type = 'add_hot_status' THEN TRUE
+       ELSE FALSE
+  END AS is_hot,
+  CASE WHEN last_quoted.type = 'add_quoted_status' THEN TRUE
+       ELSE FALSE
+  END AS is_quoted
 
 FROM calls
 LEFT JOIN LATERAL (
